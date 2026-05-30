@@ -124,7 +124,7 @@ namespace Tank
 
         public override void collisionEffect(Sprite other)
         {
-            if (other is Shell)
+            if (other is Shell && !exploding)
             {
                 exploding = true;
                 explosion = new Explosion(textures, Yaw, Position, dimensions);

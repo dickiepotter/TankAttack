@@ -38,6 +38,12 @@ namespace Tank
             using var stream = File.OpenRead(ResolvePath(file));
             var image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlue);
 
+            // Rows of an RGB image aren't necessarily 4-byte aligned (e.g.
+            // explosion.jpg is 153 px wide -> 459 bytes/row). The GL default unpack
+            // alignment of 4 would misread them into a skewed, "lined" texture, so
+            // tell GL the rows are tightly packed.
+            GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
+
             GL.BindTexture(TextureTarget.Texture2D, textures[currentPosition]);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);

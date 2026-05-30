@@ -9,7 +9,9 @@ namespace Tank
     public class Shell : Sprite
     {
         private readonly Quadric quadratic;
-        private readonly int moveRange = 400;
+        // Shorter flight than the original 400 so a missed shot clears sooner and
+        // you can fire again (only one shell exists at a time).
+        private readonly int moveRange = 200;
         private int currentMoves = 0;
         private float pitch;
 
@@ -50,7 +52,9 @@ namespace Tank
             GL.PopMatrix();
         }
 
-        public override void collisionEffect(Sprite other) { }
+        // The shell is consumed when it hits something, so you can fire again
+        // immediately (the original let it fly on through).
+        public override void collisionEffect(Sprite other) => expired = true;
 
         private bool expired;
         public bool Expired => expired;
