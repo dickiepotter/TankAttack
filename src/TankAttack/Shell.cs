@@ -20,7 +20,19 @@ namespace Tank
         {
             this.Yaw = initialYaw;
             this.pitch = initialPitch;
-            this.Position = new float[] { initialPosition[0] + 2.5f, initialPosition[1] + 6.2f, initialPosition[2] + 4.2f };
+
+            // Spawn out the front of the tank along the firing direction (at barrel
+            // height) so it appears to leave the gun. The original used a fixed
+            // world offset that ignored which way the tank was facing.
+            double r = this.Yaw * System.Math.PI / 180;
+            float forwardX = (float)System.Math.Sin(r);
+            float forwardZ = (float)System.Math.Cos(r);
+            this.Position = new float[]
+            {
+                initialPosition[0] + 2.5f + forwardX * 6f,
+                initialPosition[1] + 7.3f,
+                initialPosition[2] + 4f + forwardZ * 6f,
+            };
             expired = false;
 
             quadratic = new Quadric { TextureEnabled = true };
@@ -39,7 +51,13 @@ namespace Tank
                 GL.Rotate(this.Yaw, 0, 1, 0);
 
                 GL.Enable(EnableCap.Texture2D);
+                // Additive blend so the fireball's black background is transparent.
+                GL.Enable(EnableCap.Blend);
+                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.One);
+                GL.DepthMask(false);
                 quadratic.Sphere(dimensions.Width, 50, 10);
+                GL.DepthMask(true);
+                GL.Disable(EnableCap.Blend);
                 GL.Disable(EnableCap.Texture2D);
 
                 currentMoves++;

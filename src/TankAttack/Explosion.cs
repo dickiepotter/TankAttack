@@ -38,11 +38,20 @@ namespace Tank
                 float scale = counter / 100f;
                 GL.Scale(scale, scale, scale);
 
+                // Additive blend so the explosion texture's black background is
+                // transparent and the fire glows over the scene.
+                GL.Enable(EnableCap.Blend);
+                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.One);
+                GL.DepthMask(false);
+
                 float w = buildingSize.Width, h = buildingSize.Height, d = buildingSize.Depth;
                 Quad(0, 0, -1, (0, h, 0), (0, 0, 0), (w, 0, 0), (w, h, 0));        // front
                 Quad(1, 0, 0, (0, h, d), (0, 0, d), (0, 0, 0), (0, h, 0));        // left
                 Quad(0, 0, 1, (w, h, d), (w, 0, d), (0, 0, d), (0, h, d));        // back
                 Quad(-1, 0, 0, (w, h, 0), (w, 0, 0), (w, 0, d), (w, h, d));       // right
+
+                GL.DepthMask(true);
+                GL.Disable(EnableCap.Blend);
 
                 counter++;
             }
