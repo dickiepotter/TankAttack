@@ -1,0 +1,7 @@
+# Normalise line endings; let Git handle CRLF/LF per platform.
+* text=auto
+
+# Treat binary assets as binary.
+*.png binary
+*.jpg binary
+*.bmp binary
