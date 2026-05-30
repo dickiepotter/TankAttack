@@ -124,7 +124,7 @@ namespace Tank
         public void fire()
         {
             if (shell == null || shell.Expired)
-                shell = new Shell(dimensions, textures, vehical.Yaw - Yaw, Pitch, vehical.Position);
+                shell = new Shell(dimensions, textures, vehical.Yaw, Yaw, Pitch, vehical.Position);
         }
     }
 }

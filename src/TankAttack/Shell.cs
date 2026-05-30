@@ -1,64 +1,66 @@
+using System;
 using OpenTK.Graphics.OpenGL;
 using Tank.Core;
 using Tank.Tools;
 
 namespace Tank
 {
-    /// <summary>The fired shell: a textured sphere that flies forward until it
-    /// expires or hits something. Port of CSOpenGL <c>Shell</c>.</summary>
+    /// <summary>
+    /// The fired shell: a small brass projectile that flies forward until it
+    /// expires or hits something. Port of CSOpenGL <c>Shell</c>, reworked from the
+    /// original textured fireball sphere into a simple shell shape.
+    /// </summary>
     public class Shell : Sprite
     {
-        private readonly Quadric quadratic;
-        // Shorter flight than the original 400 so a missed shot clears sooner and
-        // you can fire again (only one shell exists at a time).
+        private readonly Quadric quadratic = new Quadric();
+        // Shorter flight than the original 400 so a missed shot clears sooner.
         private readonly int moveRange = 200;
         private int currentMoves = 0;
         private float pitch;
 
-        public Shell(WorldDimensions dimensions, TextureCollection textures, float initialYaw, float initialPitch, float[] initialPosition)
+        public Shell(WorldDimensions dimensions, TextureCollection textures, float tankYaw, float turretYaw, float initialPitch, float[] initialPosition)
             : base(dimensions, textures)
         {
-            this.Yaw = initialYaw;
+            this.Yaw = tankYaw - turretYaw; // flight direction
             this.pitch = initialPitch;
-
-            // Spawn out the front of the tank along the firing direction (at barrel
-            // height) so it appears to leave the gun. The original used a fixed
-            // world offset that ignored which way the tank was facing.
-            double r = this.Yaw * System.Math.PI / 180;
-            float forwardX = (float)System.Math.Sin(r);
-            float forwardZ = (float)System.Math.Cos(r);
-            this.Position = new float[]
-            {
-                initialPosition[0] + 2.5f + forwardX * 6f,
-                initialPosition[1] + 7.3f,
-                initialPosition[2] + 4f + forwardZ * 6f,
-            };
+            this.dimensions = new Dimension3f(1, 1, 1);
             expired = false;
 
-            quadratic = new Quadric { TextureEnabled = true };
-            this.dimensions = new Dimension3f(1, 1, 1);
+            // Start at the gun tip: the tank-local gun position (2.5, 7.3, 5)
+            // rotated into the world by the tank's yaw, then pushed forward along
+            // the firing direction to clear the barrel. The original used a fixed
+            // world offset that ignored the tank's facing, so the shell appeared to
+            // the side once the tank turned.
+            const float gx = 2.5f, gy = 7.3f, gz = 5f;
+            double ty = tankYaw * Math.PI / 180;
+            float rx = (float)(gx * Math.Cos(ty) + gz * Math.Sin(ty));
+            float rz = (float)(-gx * Math.Sin(ty) + gz * Math.Cos(ty));
+
+            double sy = Yaw * Math.PI / 180;
+            float fwdX = (float)Math.Sin(sy), fwdZ = (float)Math.Cos(sy);
+
+            this.Position = new float[]
+            {
+                initialPosition[0] + rx + fwdX * 4f,
+                initialPosition[1] + gy,
+                initialPosition[2] + rz + fwdZ * 4f,
+            };
         }
 
         public override void draw()
         {
-            GL.Color3(1f, 1f, 1f);
-            textures.useTexture(4);
-
             GL.PushMatrix();
             if (currentMoves < moveRange)
             {
                 GL.Translate(this.Position[0], this.Position[1], this.Position[2]);
-                GL.Rotate(this.Yaw, 0, 1, 0);
+                GL.Rotate(this.Yaw, 0, 1, 0); // point along travel (+Z local)
 
-                GL.Enable(EnableCap.Texture2D);
-                // Additive blend so the fireball's black background is transparent.
-                GL.Enable(EnableCap.Blend);
-                GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.One);
-                GL.DepthMask(false);
-                quadratic.Sphere(dimensions.Width, 50, 10);
-                GL.DepthMask(true);
-                GL.Disable(EnableCap.Blend);
-                GL.Disable(EnableCap.Texture2D);
+                GL.Color3(0.76f, 0.58f, 0.22f); // brass
+                quadratic.Cylinder(0.5, 0.5, 2.0, 16, 4); // body
+                GL.PushMatrix();
+                GL.Translate(0, 0, 2.0);
+                quadratic.Cylinder(0.5, 0.0, 1.2, 16, 4); // nose cone
+                GL.PopMatrix();
 
                 currentMoves++;
                 this.moveForward();
@@ -70,8 +72,7 @@ namespace Tank
             GL.PopMatrix();
         }
 
-        // The shell is consumed when it hits something, so you can fire again
-        // immediately (the original let it fly on through).
+        // The shell is consumed when it hits something, so you can fire again.
         public override void collisionEffect(Sprite other) => expired = true;
 
         private bool expired;

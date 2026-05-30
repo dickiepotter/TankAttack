@@ -92,13 +92,23 @@ Deliberate, documented changes:
   barrel, since OpenTK ships no GLU.
 - **Textures via StbImageSharp** instead of `System.Drawing.Bitmap` — also fixes a
   latent red/blue colour swap in the original (it fed BGR pixel data to GL as RGB).
-- **The explosion now grows smoothly** — the original scaled it by integer
-  division, so it stayed invisible then popped to full size.
-- **Aspect ratio** follows the main view instead of the original's hard-coded `1`.
+- **Explosions are camera-facing billboards** with additive blending (so the
+  texture's black background is transparent) — the original drew them as a solid
+  textured cube whose black background showed, and which scaled by integer
+  division so it barely appeared.
+- **The shell** is a small brass projectile spawned from the gun along the firing
+  direction — the original was a textured sphere placed at a fixed world offset
+  that ignored which way the tank faced.
+- **Fullscreen main view with a circular minimap overlay** (stencil-masked) — the
+  original squeezed the 3D view into 80% width beside a mostly-broken minimap
+  viewport.
+- **Texture row alignment** set to 1, so the non-power-of-two explosion texture
+  (153×160) no longer unpacks into a skewed "lined" pattern.
+- **Aspect ratio** follows the window instead of the original's hard-coded `1`.
 
-The original was a finished, playable coursework game; this port preserves that,
-including its quirks (e.g. the deliberately faithful, slightly-clipped minimap
-viewport, and the buggy fog toggle the author themselves noted).
+The original was a finished, playable coursework game; this port preserves its
+design and feel while smoothing the rough edges noted above (and the buggy fog
+toggle the author themselves flagged remains, faithfully).
 
 ## Credits
 

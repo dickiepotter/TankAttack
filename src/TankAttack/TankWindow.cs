@@ -166,9 +166,9 @@ namespace Tank
 
         private void SetProjection()
         {
-            // The original hard-coded an aspect of 1 (distorting its non-square
-            // window); match the main view's aspect instead so it isn't stretched.
-            double aspect = ClientSize.Y > 0 ? (ClientSize.X * 0.8) / ClientSize.Y : 1.0;
+            // The main view is now fullscreen, so use the full window aspect. (The
+            // original hard-coded 1, distorting its non-square window.)
+            double aspect = ClientSize.Y > 0 ? (double)ClientSize.X / ClientSize.Y : 1.0;
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
             // Far plane was 400, but the arena walls sit ~500 from the centre and
@@ -214,9 +214,9 @@ namespace Tank
             int w = ClientSize.X, h = ClientSize.Y;
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            // ---- Main chase view ----
+            // ---- Main chase view (fullscreen) ----
             GL.PushMatrix();
-            GL.Viewport(0, 0, (int)(w - (w * 0.2)), h);
+            GL.Viewport(0, 0, w, h);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
             Glu.LookAt(eye[0], eye[1], eye[2], lookAt[0], lookAt[1], lookAt[2], 0, 1, 0);
@@ -246,20 +246,35 @@ namespace Tank
             }
             GL.PopMatrix();
 
-            // ---- Minimap: a top-down overhead view in the top-right corner ----
-            // The original's minimap viewport was mostly off-screen with a broken
-            // camera; this is a simple square corner map looking straight down on
-            // the tank, with its own square projection and a scissored clear.
-            int mm = (int)(h * 0.28);
-            int mx = w - mm - 10, my = h - mm - 10;
-            GL.Viewport(mx, my, mm, mm);
+            DrawMinimap(w, h);
+        }
 
+        /// <summary>A circular, top-down minimap overlaid in the bottom-right corner
+        /// of the (fullscreen) main view, masked to a circle with the stencil buffer.</summary>
+        private void DrawMinimap(int w, int h)
+        {
+            int d = (int)(h * 0.3); // diameter
+            int margin = 16;
+            int vx = w - d - margin, vy = margin;
+            GL.Viewport(vx, vy, d, d);
+
+            // Clear just this square's stencil to 0, then stamp a filled circle as 1.
             GL.Enable(EnableCap.ScissorTest);
-            GL.Scissor(mx, my, mm, mm);
-            GL.ClearColor(0.05f, 0.05f, 0.05f, 1f);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            GL.ClearColor(0f, 0f, 0f, 0f);
+            GL.Scissor(vx, vy, d, d);
+            GL.Clear(ClearBufferMask.StencilBufferBit);
             GL.Disable(EnableCap.ScissorTest);
+
+            GL.Enable(EnableCap.StencilTest);
+            GL.StencilFunc(StencilFunction.Always, 1, 0xFF);
+            GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Replace);
+            GL.ColorMask(false, false, false, false);
+            GL.Disable(EnableCap.DepthTest);
+            DrawNdcCircle(fan: true);
+            GL.ColorMask(true, true, true, true);
+
+            // Draw the map only inside the circle.
+            GL.StencilFunc(StencilFunction.Equal, 1, 0xFF);
+            GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Keep);
 
             GL.MatrixMode(MatrixMode.Projection);
             GL.PushMatrix();
@@ -269,7 +284,7 @@ namespace Tank
             GL.LoadIdentity();
 
             float tx = tankBody.Position[0], tz = tankBody.Position[2];
-            Glu.LookAt(tx, 600, tz, tx, 0, tz, 0, 0, 1); // straight down, +Z is "up"
+            Glu.LookAt(tx, 600, tz, tx, 0, tz, 0, 0, 1); // straight down; +Z is "up". Depth test off -> painter order.
 
             ground.drawFloor(); // floor only — the sky lid would block the overhead view
             foreach (var building in buildings)
@@ -284,6 +299,48 @@ namespace Tank
             GL.MatrixMode(MatrixMode.Projection);
             GL.PopMatrix();
             GL.MatrixMode(MatrixMode.Modelview);
+
+            GL.Disable(EnableCap.StencilTest);
+
+            // Thin border ring around the map.
+            GL.Color3(0.85f, 0.85f, 0.85f);
+            GL.LineWidth(2);
+            DrawNdcCircle(fan: false);
+
+            GL.Enable(EnableCap.DepthTest);
+        }
+
+        // Draw a unit circle filling the current viewport, in NDC (no projection).
+        private static void DrawNdcCircle(bool fan)
+        {
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.PushMatrix();
+            GL.LoadIdentity();
+            GL.MatrixMode(MatrixMode.Modelview);
+            GL.PushMatrix();
+            GL.LoadIdentity();
+
+            const int segments = 64;
+            if (fan)
+            {
+                GL.Begin(PrimitiveType.TriangleFan);
+                GL.Vertex2(0f, 0f);
+            }
+            else
+            {
+                GL.Begin(PrimitiveType.LineLoop);
+            }
+            for (int i = 0; i <= segments; i++)
+            {
+                double a = 2 * System.Math.PI * i / segments;
+                GL.Vertex2(System.Math.Cos(a), System.Math.Sin(a));
+            }
+            GL.End();
+
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.PopMatrix();
+            GL.MatrixMode(MatrixMode.Modelview);
+            GL.PopMatrix();
         }
 
         private void Capture(string path)
