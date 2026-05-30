@@ -24,10 +24,12 @@ namespace Tank
         /// <summary>Held-key actions, called once per frame.</summary>
         public void Update(KeyboardState keyboard)
         {
+            // Standard WASD: the original used W/Z to move and A/S to turn (no D),
+            // which felt mismapped. W/S now drive, A/D turn the tank.
             if (keyboard.IsKeyDown(Keys.W)) toMove.moveForward();
-            if (keyboard.IsKeyDown(Keys.Z)) toMove.moveBackward();
-            if (keyboard.IsKeyDown(Keys.S)) toMove.yawAntiClockwise();
-            if (keyboard.IsKeyDown(Keys.A)) toMove.yawClockwise();
+            if (keyboard.IsKeyDown(Keys.S)) toMove.moveBackward();
+            if (keyboard.IsKeyDown(Keys.A)) toMove.yawClockwise();      // turn left
+            if (keyboard.IsKeyDown(Keys.D)) toMove.yawAntiClockwise();  // turn right
 
             if (keyboard.IsKeyDown(Keys.PageUp)) toAim.pitchUp();
             if (keyboard.IsKeyDown(Keys.PageDown)) toAim.pitchDown();

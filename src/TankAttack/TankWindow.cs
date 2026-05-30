@@ -41,7 +41,7 @@ namespace Tank
             : base(GameWindowSettings.Default, new NativeWindowSettings
             {
                 ClientSize = new Vector2i(936, 592),
-                Title = "Tank Attack  (W/Z drive, A/S turn, ,/. + PgUp/PgDn aim, Space fire, F1 fog F2 light F3 night)",
+                Title = "Tank Attack  (WASD drive/turn, ,/. + PgUp/PgDn aim, Space fire, F1 fog F2 light F3 night)",
                 Profile = ContextProfile.Compatability, // fixed-function GL needs compatibility
                 APIVersion = new Version(3, 3),
             })
@@ -171,7 +171,9 @@ namespace Tank
             double aspect = ClientSize.Y > 0 ? (ClientSize.X * 0.8) / ClientSize.Y : 1.0;
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
-            Glu.Perspective(60, aspect, 0.01, 400);
+            // Far plane was 400, but the arena walls sit ~500 from the centre and
+            // were being clipped; 2000 lets the whole arena render.
+            Glu.Perspective(60, aspect, 0.01, 2000);
             GL.MatrixMode(MatrixMode.Modelview);
         }
 
@@ -244,20 +246,44 @@ namespace Tank
             }
             GL.PopMatrix();
 
-            // ---- Minimap (top-down), faithful to the original's viewport ----
+            // ---- Minimap: a top-down overhead view in the top-right corner ----
+            // The original's minimap viewport was mostly off-screen with a broken
+            // camera; this is a simple square corner map looking straight down on
+            // the tank, with its own square projection and a scissored clear.
+            int mm = (int)(h * 0.28);
+            int mx = w - mm - 10, my = h - mm - 10;
+            GL.Viewport(mx, my, mm, mm);
+
+            GL.Enable(EnableCap.ScissorTest);
+            GL.Scissor(mx, my, mm, mm);
+            GL.ClearColor(0.05f, 0.05f, 0.05f, 1f);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.ClearColor(0f, 0f, 0f, 0f);
+            GL.Disable(EnableCap.ScissorTest);
+
+            GL.MatrixMode(MatrixMode.Projection);
             GL.PushMatrix();
-            GL.Viewport((int)(w - (w * 0.2)), 0, w, (int)(h - (h * 0.6)));
-            Glu.LookAt(eye[0], eye[1], eye[2], lookAt[0], lookAt[1], lookAt[2], 0, 1, 0);
-            GL.Rotate(90, 1, 0, 0);
-            tankBody.draw();
+            GL.LoadIdentity();
+            Glu.Perspective(60, 1, 1, 2000);
+            GL.MatrixMode(MatrixMode.Modelview);
+            GL.LoadIdentity();
 
-            GL.Rotate(-tankBody.Yaw, 0, 1, 0);
-            GL.Translate(-tankBody.Position[0], -tankBody.Position[1], -tankBody.Position[2]);
+            float tx = tankBody.Position[0], tz = tankBody.Position[2];
+            Glu.LookAt(tx, 600, tz, tx, 0, tz, 0, 0, 1); // straight down, +Z is "up"
 
-            ground.draw();
+            ground.drawFloor(); // floor only — the sky lid would block the overhead view
             foreach (var building in buildings)
                 if (!building.expired) building.draw();
+
+            GL.PushMatrix();
+            GL.Translate(tx, 0, tz);
+            GL.Rotate(360 - tankBody.Yaw, 0, 1, 0);
+            tankBody.draw();
             GL.PopMatrix();
+
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.PopMatrix();
+            GL.MatrixMode(MatrixMode.Modelview);
         }
 
         private void Capture(string path)

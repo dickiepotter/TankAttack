@@ -16,6 +16,16 @@ namespace Tank
             this.dimensions = dimensions;
         }
 
+        /// <summary>Just the floor quad — used by the top-down minimap, which must
+        /// not draw the sky lid (it would block the overhead view of the ground).</summary>
+        public void drawFloor()
+        {
+            GL.Color3(1f, 1f, 1f);
+            var d = dimensions;
+            Quad(1, 0, 1, 0,
+                (d.Left, d.Bottom, d.Near), (d.Left, d.Bottom, d.Far), (d.Right, d.Bottom, d.Far), (d.Right, d.Bottom, d.Near));
+        }
+
         public void draw()
         {
             GL.Color3(1f, 1f, 1f);
@@ -26,8 +36,7 @@ namespace Tank
                 (d.Left, d.Top, d.Near), (d.Left, d.Top, d.Far), (d.Right, d.Top, d.Far), (d.Right, d.Top, d.Near));
 
             // Ground (texture 1)
-            Quad(1, 0, 1, 0,
-                (d.Left, d.Bottom, d.Near), (d.Left, d.Bottom, d.Far), (d.Right, d.Bottom, d.Far), (d.Right, d.Bottom, d.Near));
+            drawFloor();
 
             // Cliff walls (texture 2)
             textures.useTexture(2);

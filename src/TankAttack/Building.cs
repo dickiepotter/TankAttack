@@ -27,6 +27,16 @@ namespace Tank
         {
             if (expired) return;
 
+            // Once hit, the building is gone — stop drawing its walls so the
+            // growing explosion in its place is actually visible (the original
+            // drew both, leaving the explosion buried inside the solid building).
+            if (exploding)
+            {
+                if (explosion.expired) { explosion = null; expired = true; }
+                else explosion.draw();
+                return;
+            }
+
             GL.Color3(1f, 1f, 1f);
 
             GL.PushMatrix();
@@ -76,19 +86,6 @@ namespace Tank
                     (1, 0), (dimensions.Width + 1, dimensions.Height, dimensions.Depth + 1));
             }
             GL.PopMatrix();
-
-            if (exploding)
-            {
-                if (explosion.expired)
-                {
-                    explosion = null;
-                    expired = true;
-                }
-                else
-                {
-                    explosion.draw();
-                }
-            }
         }
 
         // A textured quad: corners are listed with the same (0,0),(0,1),(1,1),(1,0)

@@ -25,8 +25,8 @@ dotnet run
 
 | Input | Action |
 | --- | --- |
-| `W` / `Z` | drive forward / backward |
-| `A` / `S` | turn the tank left / right |
+| `W` / `S` | drive forward / backward |
+| `A` / `D` | turn the tank left / right |
 | `,` / `.` | turn the turret left / right |
 | `PgUp` / `PgDn` | raise / lower the gun |
 | `Space` | fire a shell |
