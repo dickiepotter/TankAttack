@@ -114,3 +114,9 @@ toggle the author themselves flagged remains, faithfully).
 
 By **Richard Potter** (University of Hull, 2004). Texture loading help, per the
 original report, from Darren McKie (author of CSOpenGL).
+
+## Licence and disclaimer
+
+This is a personal project by Richard Potter, shared in the hope it's useful. It's free to use under the MIT licence (see [LICENSE](LICENSE)). It's provided as is: I make no promises that it works or suits your purpose, and I take no responsibility for anything that happens from using it. It isn't a product of, or supported by, any company I work for.
+
+The texture images in `src/TankAttack/Textures/` came with the original 2004 coursework and their sources weren't recorded; any that turn out to be someone else's remain theirs and aren't covered by this licence.
